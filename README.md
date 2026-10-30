@@ -35,7 +35,7 @@ data/
 ```
 
 Paths in the config are relative to the terminal's working directory. New runs go
-under `runs/baseline`. The split command recreates this folder for a fresh start.
+under `runs/baseline`. Training creates this folder and its split automatically.
 Set a different `run_dir` for each new configuration or model comparison.
 Supported architectures: `resnet18`, `resnet50`. `pretrained: true` downloads
 ImageNet weights if they are not already cached. Seeds are fixed, although exact
@@ -45,15 +45,20 @@ augmentation; evaluation uses deterministic resizing and ImageNet normalization.
 ## Train and evaluate
 
 ```powershell
-python -m medical_gradcam split
 python -m medical_gradcam train
 python -m medical_gradcam evaluate
 python -m medical_gradcam robustness --split val --limit 100
 ```
 
+Only `train` is needed to start: it creates the split using `val_ratio` and `seed`
+from `config.json` if none exists, or reuses the existing matching split. It prints
+the split sizes and training progress in the terminal. The separate `split`
+command is optional, for inspecting a split or providing verified patient IDs.
+
 The split is persisted in `runs/baseline/split.json`. Reusing it preserves the
-same membership. Existing split manifests and trained checkpoints are protected
-against accidental replacement; use a new `run_dir` for another experiment.
+same membership. If changing the validation ratio or seed, choose a new `run_dir`
+in `config.json` and run `train` again. Existing split manifests and trained
+checkpoints are protected against accidental replacement.
 Checkpoint selection maximizes validation accuracy, then minimizes validation
 loss to break ties. Checkpoints include preprocessing settings, class names,
 validation metrics and the split fingerprint. Training is not resumed by rerunning

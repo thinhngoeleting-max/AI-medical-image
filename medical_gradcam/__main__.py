@@ -17,7 +17,7 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     split = commands.add_parser("split", help="Save a train/validation split without moving files")
     split.add_argument("--patient-csv", help="CSV columns: path,patient_id; paths relative to data_dir")
-    commands.add_parser("train", help="Train and save a self-describing checkpoint")
+    commands.add_parser("train", help="Create or reuse the configured split, then train")
     evaluation = commands.add_parser("evaluate", help="Export classification and calibration metrics")
     evaluation.add_argument("--split", choices=["val", "test"], default="test")
     evaluation.add_argument("--limit", type=positive_int, help="Smoke check only; not a final evaluation")

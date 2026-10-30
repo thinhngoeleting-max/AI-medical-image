@@ -5,7 +5,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from .config import seed_everything, select_device, write_json
-from .data import ImageRecords, fingerprint, image_transform, load_split
+from .data import ImageRecords, create_split, fingerprint, image_transform, load_split
 from .model import build_model
 
 
@@ -30,10 +30,18 @@ def run_epoch(model, loader, criterion, device, optimizer=None):
 
 def train(config):
     seed_everything(config.seed)
-    manifest = load_split(config)
     output = Path(config.run_dir)
     if (output / "best.pt").exists():
         raise FileExistsError("best.pt already exists. Choose a new run_dir for another experiment.")
+    if (output / "split.json").exists():
+        manifest = load_split(config)
+        print(f"Reusing saved split: {output / 'split.json'}", flush=True)
+    else:
+        print(f"Creating split from config: validation ratio {config.val_ratio:.0%}", flush=True)
+        manifest = create_split(config)
+        print(f"Split saved to {output / 'split.json'}. No images moved.", flush=True)
+    print(" | ".join(f"{name}: {len(manifest[name])}" for name in ("train", "val", "test")),
+          flush=True)
     device = select_device(config.device)
     print(f"Training {config.architecture} on {device}", flush=True)
     if not manifest["patient_separation_verified"]:

@@ -108,8 +108,8 @@ def create_split(config, patient_csv=None):
 def load_split(config):
     path = Path(config.run_dir) / "split.json"
     if not path.exists():
-        raise FileNotFoundError("Create the split first: python -m medical_gradcam split")
+        raise FileNotFoundError("No split found. Run python -m medical_gradcam train to create it.")
     manifest = json.loads(path.read_text(encoding="utf-8"))
     if manifest["seed"] != config.seed or manifest["val_ratio"] != config.val_ratio:
-        raise ValueError("Split settings changed. Use a new run_dir and run split again.")
+        raise ValueError("Split settings changed. Set a new run_dir in config.json and run train again.")
     return manifest

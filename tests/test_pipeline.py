@@ -89,8 +89,9 @@ class PipelineTests(unittest.TestCase):
 
     def test_end_to_end_without_downloads(self):
         seed_everything(self.config.seed)
-        manifest = create_split(self.config)
         train(self.config)
+        manifest = load_split(self.config)
+        self.assertEqual([len(manifest[s]) for s in ("train", "val", "test")], [18, 6, 8])
         checkpoint = Path(self.config.run_dir) / "best.pt"
         _, classes, size, metadata = load_model(checkpoint, self.config, torch.device("cpu"))
         self.assertEqual(metadata["split_fingerprint"], fingerprint(manifest))
@@ -114,6 +115,29 @@ class PipelineTests(unittest.TestCase):
         split_path.write_text(json.dumps(bad), encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "disagree"):
             evaluate(self.config, checkpoint)
+
+    def test_training_reuses_patient_split_and_protects_previous_run(self):
+        manifest = create_split(self.config, self.patient_csv())
+        split_path = Path(self.config.run_dir) / "split.json"
+        original = split_path.read_bytes()
+        # A changed config must not silently reshuffle an existing split.
+        self.config.val_ratio = 0.3
+        with self.assertRaisesRegex(ValueError, "Split settings changed"):
+            train(self.config)
+        self.assertEqual(split_path.read_bytes(), original)
+        self.config.val_ratio = 0.25
+        train(self.config)
+        self.assertEqual(split_path.read_bytes(), original)
+        checkpoint = Path(self.config.run_dir) / "best.pt"
+        metadata = torch.load(checkpoint, map_location="cpu", weights_only=True)
+        self.assertEqual(metadata["split_fingerprint"], fingerprint(manifest))
+        self.assertTrue(metadata["patient_separation_verified"])
+        # Another train invocation must leave both split and checkpoint intact.
+        previous_mtime = checkpoint.stat().st_mtime_ns
+        with self.assertRaisesRegex(FileExistsError, "best.pt already exists"):
+            train(self.config)
+        self.assertEqual(checkpoint.stat().st_mtime_ns, previous_mtime)
+        self.assertEqual(split_path.read_bytes(), original)
 
 
 if __name__ == "__main__":
