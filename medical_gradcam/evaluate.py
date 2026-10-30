@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from sklearn.metrics import (ConfusionMatrixDisplay, classification_report,
-                             confusion_matrix, roc_auc_score, average_precision_score)
+                             confusion_matrix, roc_auc_score, average_precision_score,
+                             roc_curve, precision_recall_curve)
 from torch.utils.data import DataLoader
 
 from .config import select_device, write_json
@@ -27,6 +28,49 @@ def calibration_metrics(labels, probabilities, bins=10):
             ece += float(mask.mean() * abs(correct[mask].mean() - confidence[mask].mean()))
     return {"brier_score": float(np.mean((probabilities[:, 1] - labels) ** 2)),
             "expected_calibration_error": ece, "calibration_bins": bins}
+
+
+def save_ranking_curves(labels, scores, output, positive_class="PNEUMONIA"):
+    """Save ranking curves from probabilities, not thresholded class predictions."""
+    labels, scores = np.asarray(labels), np.asarray(scores)
+    output = Path(output)
+    output.mkdir(parents=True, exist_ok=True)
+    curves = {"positive_class": positive_class, "sample_count": len(labels),
+              "positive_prevalence": float(labels.mean()), "roc": None,
+              "precision_recall": None}
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+    if len(np.unique(labels)) == 2:
+        fpr, tpr, _ = roc_curve(labels, scores)
+        precision, recall, _ = precision_recall_curve(labels, scores)
+        auc = float(roc_auc_score(labels, scores))
+        ap = float(average_precision_score(labels, scores))
+        curves["roc"] = {"false_positive_rate": fpr.tolist(),
+                         "true_positive_rate": tpr.tolist(), "auc": auc}
+        curves["precision_recall"] = {"precision": precision.tolist(),
+                                      "recall": recall.tolist(), "average_precision": ap}
+        axes[0].plot(fpr, tpr, label=f"ROC-AUC = {auc:.3f}")
+        axes[0].plot([0, 1], [0, 1], "--", color="gray", label="Chance")
+        axes[1].step(recall, precision, where="post", label=f"{positive_class} AP = {ap:.3f}")
+        axes[1].axhline(curves["positive_prevalence"], linestyle="--", color="gray",
+                        label=f"Prevalence = {curves['positive_prevalence']:.3f}")
+        for ax in axes:
+            ax.legend(loc="lower left")
+    else:
+        curves["note"] = "Both ground-truth classes are required; ranking curves are unavailable."
+        for ax in axes:
+            ax.text(0.5, 0.5, "Unavailable: evaluation contains only one class",
+                    ha="center", va="center", wrap=True, transform=ax.transAxes)
+    axes[0].set(title="ROC curve", xlabel="False positive rate", ylabel="True positive rate (recall)")
+    axes[1].set(title="Precision-recall curve", xlabel="Recall", ylabel="Precision")
+    for ax in axes:
+        ax.set(xlim=(0, 1), ylim=(0, 1.05))
+        ax.grid(alpha=0.2)
+    fig.suptitle(f"Positive class: {positive_class} | n={len(labels)}")
+    fig.tight_layout()
+    fig.savefig(output / "ranking_curves.png", dpi=140)
+    plt.close(fig)
+    write_json(output / "curves.json", curves)
+    return curves
 
 
 def evaluation_data(config, metadata, classes, split):
@@ -69,7 +113,8 @@ def evaluate(config, checkpoint, split="test", limit=None):
         "sample_count": len(records), "total_available": total_available,
         "partial_evaluation": len(records) < total_available,
         "patient_separation_verified": metadata.get("patient_separation_verified", False),
-        "classes": classes, "accuracy": float(np.mean(np.array(truth) == predicted)),
+        "classes": classes, "positive_class": classes[1],
+        "accuracy": float(np.mean(np.array(truth) == predicted)),
         "classification_report": report, "confusion_matrix": cm.tolist(),
         "roc_auc": float(roc_auc_score(truth, positive)) if len(set(truth)) == 2 else None,
         "average_precision": float(average_precision_score(truth, positive))
@@ -92,7 +137,8 @@ def evaluate(config, checkpoint, split="test", limit=None):
     disp.plot()
     plt.tight_layout()
     plt.savefig(output / "confusion_matrix.png", dpi=140)
-    plt.close("all")
+    plt.close(disp.figure_)
+    save_ranking_curves(truth, positive, output, classes[1])
     print(f"{split}: {len(records)}/{total_available} images | accuracy {metrics['accuracy']:.4f}")
     print(f"Confusion matrix (rows=true, columns=predicted): {cm.tolist()}")
     print(f"Saved metrics and predictions to {output}")

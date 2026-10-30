@@ -68,6 +68,10 @@ Use validation for choosing settings. Reserve test evaluation for the final
 comparison. Evaluation exports probabilities, per-class precision/recall/F1,
 confusion matrix, ROC-AUC, average precision, Brier score and a 10-bin calibration
 error. Calibration metrics measure reliability; they do not calibrate the model.
+ROC and precision-recall curves are saved as `ranking_curves.png`, with the
+underlying coordinates in `curves.json`. Pneumonia is the positive class; its AP
+is a classification metric, not detection mAP. Single-class evaluation samples
+show an unavailable notice instead of misleading ranking curves.
 `predictions.json` categorizes true/false positives and negatives, so you can choose
 examples from each group for explanations. A `--limit` evaluation is explicitly
 marked partial and saved separately from full metrics.
@@ -128,8 +132,10 @@ perform lung segmentation, clinical report generation or clinical diagnosis.
 ## Evaluation in Jupyter
 
 Open `Evaluation.ipynb` with the `.venv` Python kernel and run the cells. It uses
-the Python modules to display training curves (when available), test metrics,
-the confusion matrix, Grad-CAM comparisons and robustness results inline.
+the Python modules to display training loss/accuracy curves with the selected
+best epoch, per-class precision/recall/F1, sensitivity, specificity, ROC and
+precision-recall curves, the confusion matrix, Grad-CAM comparisons and robustness
+results inline. IoU and detection mAP require location annotations and are omitted.
 It never starts training. It loads `run_dir/best.pt`; train in the terminal
 before running the notebook. Check the printed checkpoint before evaluating.
 

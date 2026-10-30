@@ -10,7 +10,7 @@ import torch
 
 from medical_gradcam.config import Config, seed_everything
 from medical_gradcam.data import create_split, fingerprint, image_transform, load_split
-from medical_gradcam.evaluate import calibration_metrics, evaluate
+from medical_gradcam.evaluate import calibration_metrics, evaluate, save_ranking_curves
 from medical_gradcam.explain import explain
 from medical_gradcam.model import load_model
 from medical_gradcam.robustness import perturbations, robustness
@@ -100,6 +100,11 @@ class PipelineTests(unittest.TestCase):
         metrics = evaluate(self.config, checkpoint)
         self.assertEqual(metrics["sample_count"], 8)
         self.assertEqual(sum(map(sum, metrics["confusion_matrix"])), 8)
+        evaluation_dir = Path(self.config.run_dir) / "evaluation"
+        curves = json.loads((evaluation_dir / "curves.json").read_text(encoding="utf-8"))
+        self.assertAlmostEqual(curves["roc"]["auc"], metrics["roc_auc"])
+        self.assertAlmostEqual(curves["precision_recall"]["average_precision"], metrics["average_precision"])
+        self.assertTrue((evaluation_dir / "ranking_curves.png").exists())
         robustness(self.config, checkpoint, split="val", limit=3)
         image = self.data / "test/NORMAL/0.png"
         for method in ("gradcam", "gradcam++"):
@@ -125,6 +130,7 @@ class PipelineTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Split settings changed"):
             train(self.config)
         self.assertEqual(split_path.read_bytes(), original)
+
         self.config.val_ratio = 0.25
         train(self.config)
         self.assertEqual(split_path.read_bytes(), original)
@@ -138,6 +144,18 @@ class PipelineTests(unittest.TestCase):
             train(self.config)
         self.assertEqual(checkpoint.stat().st_mtime_ns, previous_mtime)
         self.assertEqual(split_path.read_bytes(), original)
+
+    def test_ranking_curves_use_probabilities_and_handle_one_class(self):
+        output = self.root / "curves"
+        perfect = save_ranking_curves([0, 1, 0, 1], [0.1, 0.9, 0.2, 0.8], output)
+        self.assertEqual(perfect["roc"]["auc"], 1.0)
+        self.assertEqual(perfect["precision_recall"]["average_precision"], 1.0)
+        reversed_scores = save_ranking_curves([0, 1, 0, 1], [0.9, 0.1, 0.8, 0.2], output)
+        self.assertEqual(reversed_scores["roc"]["auc"], 0.0)
+        unavailable = save_ranking_curves([0, 0], [0.1, 0.2], output)
+        self.assertIsNone(unavailable["roc"])
+        self.assertIsNone(unavailable["precision_recall"])
+        self.assertIn("Both ground-truth classes are required", (output / "curves.json").read_text())
 
 
 if __name__ == "__main__":
