@@ -1,0 +1,14 @@
+{
+  "data_dir": "data",
+  "run_dir": "runs/baseline",
+  "architecture": "resnet50",
+  "val_ratio": 0.2,
+  "seed": 42,
+  "image_size": 224,
+  "batch_size": 32,
+  "epochs": 10,
+  "learning_rate": 0.0001,
+  "num_workers": 0,
+  "device": "auto",
+  "pretrained": true
+}

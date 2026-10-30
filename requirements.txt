@@ -1,0 +1,8 @@
+# Keep your working CUDA-enabled torch/torchvision installation.
+torch>=2.0
+torchvision>=0.15
+numpy
+Pillow
+matplotlib
+scikit-learn
+grad-cam
