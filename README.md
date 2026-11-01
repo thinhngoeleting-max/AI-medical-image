@@ -1,9 +1,79 @@
-# Chest X-ray explainability experiments
+# Medical imaging and report explanation
 
 Python modules for ResNet classification, Grad-CAM, and controlled image perturbations.
 Run training from this project directory in the terminal. Open `Evaluation.ipynb`
 to display evaluation, Grad-CAM and robustness results in Jupyter.
 This is an educational research project.
+
+## Browser interface: upload an X-ray
+
+```powershell
+python -m pip install -r requirements-ui.txt
+python -m app
+```
+
+Open **http://127.0.0.1:8000** to drop in a JPEG/PNG or select a test example.
+The app loads your existing checkpoint and displays predictions, class probabilities
+and Grad-CAM. Optional local chat explains the measured scores and limitations.
+It cannot diagnose illness or prescribe treatment. No retraining is needed if
+`runs/baseline/best.pt` already exists. See [interface instructions](app/README.md).
+
+For local chat, start Ollama and download the configured Google model:
+`ollama pull gemma4:e2b`. Image analysis works even when Ollama is unavailable.
+
+## Project structure
+
+```text
+medical_gradcam/
+  app/                     # Local upload, prediction, Grad-CAM and chat interface
+    static/                # Browser HTML, CSS and JavaScript
+    server.py              # Local API
+  medical_gradcam/        # ResNet training, metrics, Grad-CAM and robustness
+  healthcare_chatbot/     # Local report explanation chatbot
+    config.py            # Chat settings and local endpoint validation
+    llm_client.py        # Ollama HTTP connection
+    explainer.py         # Report context and follow-up conversation
+    __main__.py          # Terminal chat entry point
+    prompts/system.txt   # Grounding and explanation instructions
+    examples/            # Fictional reports for development
+    README.md            # Chatbot setup and limits
+  docs/
+    chatbot_scenarios.md # Conversation scenarios and evaluation criteria
+  tests/                 # Imaging and chatbot checks
+  data/                  # Existing X-rays (ignored by Git)
+  runs/                  # Training and evaluation outputs (ignored by Git)
+  private_reports/       # Optional local text inputs (ignored by Git)
+  Evaluation.ipynb       # Imaging results and visualisations
+  config.json            # Imaging configuration
+  chatbot_config.json    # Local LLM configuration
+  requirements.txt
+  requirements-ui.txt   # Browser interface dependencies
+```
+
+The browser's result assistant explains classifier measurements, while the terminal
+report explainer explains supplied report text. Neither invents radiology reports
+from classifier predictions. Image training and Jupyter evaluation keep their
+existing workflow.
+
+## Local results explainer
+
+Install/start Ollama separately, then from the project root:
+
+```powershell
+ollama pull gemma4:e2b
+python -m healthcare_chatbot --example uncertainty --chat
+```
+
+To preview the prompt without a model or network request:
+
+```powershell
+python -m healthcare_chatbot --example negation --dry-run
+```
+
+See [chatbot setup](healthcare_chatbot/README.md) and
+[conversation scenarios](docs/chatbot_scenarios.md). The default examples are
+fictional; actual model responses still need evaluation. No LLM has been installed
+or downloaded as part of this scaffold.
 
 ## Setup
 
@@ -136,6 +206,11 @@ the Python modules to display training loss/accuracy curves with the selected
 best epoch, per-class precision/recall/F1, sensitivity, specificity, ROC and
 precision-recall curves, the confusion matrix, Grad-CAM comparisons and robustness
 results inline. IoU and detection mAP require location annotations and are omitted.
+The Grad-CAM gallery cell has an `N_IMAGES` setting (default 20; set 30 for more).
+`SELECTION` chooses a random sample of all, correct or incorrect predictions;
+`SAMPLE_SEED` changes the sample and `METHOD` selects Grad-CAM or Grad-CAM++.
+Pages show six original/overlay pairs with true labels, predictions and model
+probabilities. The model is loaded once for the gallery; no retraining is needed.
 It never starts training. It loads `run_dir/best.pt`; train in the terminal
 before running the notebook. Check the printed checkpoint before evaluating.
 

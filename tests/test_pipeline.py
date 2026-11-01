@@ -11,7 +11,7 @@ import torch
 from medical_gradcam.config import Config, seed_everything
 from medical_gradcam.data import create_split, fingerprint, image_transform, load_split
 from medical_gradcam.evaluate import calibration_metrics, evaluate, save_ranking_curves
-from medical_gradcam.explain import explain
+from medical_gradcam.explain import explain, explain_gallery
 from medical_gradcam.model import load_model
 from medical_gradcam.robustness import perturbations, robustness
 from medical_gradcam.train import train
@@ -114,6 +114,16 @@ class PipelineTests(unittest.TestCase):
             heatmap = np.load(output / "heatmap.npy")
             self.assertEqual(heatmap.shape, (32, 32))
             self.assertTrue(np.isfinite(heatmap).all())
+        predictions = json.loads((evaluation_dir / "predictions.json").read_text(encoding="utf-8"))
+        gallery = explain_gallery(self.config, checkpoint, predictions, n_images=30)
+        self.assertEqual(len(gallery["cases"]), 8)
+        self.assertEqual(len({r["path"] for r in gallery["cases"]}), 8)
+        self.assertEqual(len(gallery["pages"]), 2)
+        self.assertTrue(all(Path(page).exists() for page in gallery["pages"]))
+        incorrect = explain_gallery(self.config, checkpoint, predictions, n_images=2, selection="incorrect")
+        self.assertEqual(len(incorrect["cases"]), 2)
+        self.assertTrue(all(not r["correct"] for r in incorrect["cases"]))
+        self.assertEqual(explain_gallery(self.config, checkpoint, [], n_images=20)["pages"], [])
         bad = dict(manifest)
         bad["train"] = manifest["train"][:-1]
         split_path = Path(self.config.run_dir) / "split.json"

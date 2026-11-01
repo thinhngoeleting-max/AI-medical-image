@@ -6,3 +6,27 @@ models/
 runs/
 diffusion_outputs/
 .env
+private_reports/
+
+# Local credentials and machine-specific configuration
+.env.*
+!.env.example
+.aws/
+.ssh/
+.codex/
+*.pem
+*.key
+
+# Trained/exported weights, wherever they are saved
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+
+# Local test and browser artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+playwright-report/
+test-results/

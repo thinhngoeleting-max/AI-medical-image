@@ -1,0 +1,6 @@
+FICTIONAL EDUCATIONAL EXAMPLE - not a real patient report or a clinical recommendation.
+
+EXAM: Chest radiograph.
+COMPARISON: Previous examination dated 1 October 2026.
+FINDINGS: Previously described left basal opacity is less conspicuous. A small residual opacity remains.
+IMPRESSION: Partial interval improvement. Follow-up imaging is recommended as clinically indicated.

@@ -1,0 +1,5 @@
+FICTIONAL EDUCATIONAL EXAMPLE - not a real patient report.
+
+EXAM: Chest radiograph.
+FINDINGS: No focal air-space opacity. No pleural effusion or pneumothorax.
+IMPRESSION: No acute cardiopulmonary abnormality identified on this examination.

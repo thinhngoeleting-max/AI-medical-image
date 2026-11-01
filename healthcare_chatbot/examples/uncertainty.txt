@@ -1,0 +1,6 @@
+FICTIONAL EDUCATIONAL EXAMPLE - not a real patient report.
+
+EXAM: Chest radiograph.
+FINDINGS: Mild patchy right lower-zone opacity. No pleural effusion.
+IMPRESSION: Nonspecific right lower-zone opacity. An infective process cannot be excluded.
+Correlation with clinical findings is recommended.

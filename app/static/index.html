@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102b2b">
+  <title>Clarity · X-ray workspace</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="#workspace" aria-label="Clarity home"><span class="brand-mark">c<span>+</span></span>clarity<span class="brand-period">.</span></a>
+    <div class="sidebar-label">YOUR WORKSPACE</div>
+    <a class="nav-link active" href="#workspace"><span aria-hidden="true">▧</span> X-ray analysis <span class="nav-arrow">↗</span></a>
+    <a class="nav-link" href="#how-it-works"><span aria-hidden="true">◎</span> How it works</a>
+    <div class="sidebar-bottom"><span class="local-dot"></span> Runs on your computer<p>A little more understanding.<br>A lot more clarity.</p><span class="research-badge">RESEARCH PROTOTYPE</span></div>
+  </aside>
+
+  <main id="workspace">
+    <header class="topbar"><span>X-ray workspace <span class="breadcrumb">/ Image analysis</span></span><span class="privacy"><span class="local-dot"></span> Local processing</span></header>
+    <section class="intro"><div><div class="eyebrow">SEE THE PREDICTION. EXPLORE THE WHY.</div><h1>A clearer look at your X-ray.</h1><p>Explore your model’s prediction, see what influenced it, and ask questions.</p></div><div class="model-chip"><span class="chip-icon">✳</span><div><span>IMAGE MODEL</span><strong id="image-model">Checking checkpoint…</strong></div></div></section>
+    <div class="research-note"><span class="note-icon">i</span><p><strong>For learning and research.</strong> This experimental model cannot diagnose illness or decide treatment. Use chest X-ray test images; other images may also receive a prediction.</p></div>
+    <div id="page-error" class="error-message" role="alert" hidden></div>
+
+    <div class="workspace-grid">
+      <section class="image-column">
+        <article class="panel image-panel">
+          <div class="panel-heading"><div><span class="step">01</span><h2>Your image</h2></div><button id="reset-button" class="text-button" type="button" hidden>Clear image ↺</button></div>
+          <div class="view-tabs" role="group" aria-label="Image view"><button type="button" class="view-tab selected" data-view="original">Original X-ray</button><button type="button" class="view-tab" data-view="gradcam" disabled>Grad-CAM overlay</button></div>
+          <input id="file-input" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" hidden>
+          <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Choose or drop a chest X-ray image">
+            <div id="drop-placeholder" class="drop-placeholder">
+              <div class="upload-illustration" aria-hidden="true"><svg viewBox="0 0 80 80" fill="none"><rect x="17" y="10" width="46" height="58" rx="8" stroke="currentColor" stroke-width="1.5"/><path d="M40 21v32M34 30c-7-7-12 0-12 12s8 16 13 8V30Zm12 0c7-7 12 0 12 12s-8 16-13 8V30Z" stroke="currentColor" stroke-width="1.5"/><circle cx="61" cy="61" r="13" fill="#eaf4ef" stroke="currentColor" stroke-width="1.5"/><path d="M61 67V55m-5 5 5-5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <h3>Drop an X-ray here</h3><p>or <span class="choose-link">browse your files</span></p><span class="format-label">JPEG or PNG · Up to 10 MB</span>
+            </div>
+            <img id="image-preview" alt="Selected X-ray" hidden>
+            <span id="preview-caption" class="preview-caption" hidden></span>
+          </div>
+          <div class="image-meta"><span id="file-name">No image selected</span><span id="view-description">Images are not saved by this app</span></div>
+          <button id="analyze-button" class="primary-button" type="button" disabled><span>Analyse image</span><span aria-hidden="true">↗</span></button>
+          <p class="attribution-note" id="attribution-note" hidden>Warm colours highlight contributions to the predicted class. They do not locate or confirm disease.</p>
+        </article>
+        <article class="panel examples-panel"><div class="examples-heading"><div><h2>Just exploring?</h2><p>Start with an image from your test dataset.</p></div><span class="small-tag">TRY AN EXAMPLE</span></div><div id="examples" class="example-grid"><p class="muted">Loading test examples…</p></div><p class="example-footnote">Labels below are dataset labels, not predictions.</p></article>
+      </section>
+
+      <section class="results-column">
+        <article class="panel result-panel"><div class="panel-heading"><div><span class="step">02</span><h2>Model result</h2></div><span id="result-state" class="small-tag">AWAITING IMAGE</span></div>
+          <div id="result-empty" class="result-empty"><span class="empty-orbit" aria-hidden="true">✳</span><h3>Let’s start with an image.</h3><p>Your model’s prediction and class probabilities will appear here.</p></div>
+          <div id="result-content" hidden><div class="prediction-head"><div><span class="eyebrow">EXPERIMENTAL PREDICTION</span><h3 id="prediction-label"></h3></div><div class="prediction-score"><strong id="prediction-score"></strong><span>model probability</span></div></div><div id="probability-bars" class="probability-bars"></div><p id="dataset-label" class="dataset-label" hidden></p><div class="result-caveat"><strong>A prediction is a starting point.</strong><p id="result-caveat"></p></div><div class="next-steps"><h4>What to do next</h4><p>For a real health concern, discuss the actual X-ray, radiology report and symptoms with a qualified clinician. Do not start or stop treatment based on this model.</p><p>If you have severe difficulty breathing, seek emergency medical help now.</p><a href="https://www.nhs.uk/conditions/pneumonia/" target="_blank" rel="noreferrer">General symptom guidance · NHS ↗</a></div><p id="model-details" class="model-details"></p></div>
+        </article>
+
+        <article class="panel chat-panel"><div class="panel-heading"><div><span class="step">03</span><h2>Make sense of it</h2></div><span class="assistant-icon" aria-hidden="true">✧</span></div><p class="chat-description">Ask your local AI about the model result and its limits. It receives scores, not the X-ray.</p>
+          <div class="model-select-row"><label for="llm-model">Local language model</label><button id="refresh-models" class="text-button" type="button">Refresh ↻</button></div><select id="llm-model" aria-describedby="llm-status" disabled><option>No model available</option></select><p id="llm-status" class="llm-status" role="status">Checking Ollama…</p>
+          <div id="chat-messages" class="chat-messages" aria-live="polite"><div class="chat-welcome">Once you analyse an image, we can explore what the prediction means—and what it cannot tell you.</div></div>
+          <div class="question-chips"><button type="button" data-question="Explain this model prediction in plain language." disabled>Explain this result</button><button type="button" data-question="What should I do next, considering this is only a research model?" disabled>What should I do next?</button><button type="button" data-question="What does this Grad-CAM overlay actually tell me?" disabled>Explain Grad-CAM</button></div>
+          <form id="chat-form"><label class="sr-only" for="chat-input">Ask about this result</label><div class="chat-input-row"><input id="chat-input" placeholder="Ask about this result…" maxlength="2000" autocomplete="off" disabled><button id="send-button" type="submit" aria-label="Send question" disabled>↑</button></div></form><p id="chat-error" class="error-message" role="alert" hidden></p>
+        </article>
+      </section>
+    </div>
+
+    <section id="how-it-works" class="how-it-works"><div class="eyebrow">UNDER THE SURFACE</div><h2>One image. Three ways to understand it.</h2><div class="how-grid"><div><span>01 / CLASSIFY</span><h3>Your trained image model</h3><p>ResNet assigns scores to NORMAL and PNEUMONIA using the checkpoint from your training run.</p></div><div><span>02 / VISUALISE</span><h3>A look at attribution</h3><p>Grad-CAM highlights regions contributing to the class score. A highlighted region is not a verified finding.</p></div><div><span>03 / ASK</span><h3>A conversation with context</h3><p>Your local LLM explains measured scores and limitations. It does not interpret the image or prescribe care.</p></div></div></section>
+    <footer><span>clarity. <span class="muted">Built for understanding.</span></span><span>Local research workspace · Not a clinical diagnostic service</span></footer>
+  </main>
+</body>
+</html>
